@@ -88,6 +88,27 @@ class Home extends Component {
         xhrUserPosts.send(userPostsInformation);
     }
 
+    // converts unix timestamp to 'dd/mm/yyyy HH:MM:SS' format
+    convertTimeFormat(unixTimestamp) {
+
+        let dateTimeVar = new Date(unixTimestamp * 1000);
+        let timeDict = {
+            date: dateTimeVar.getDate(),
+            month: dateTimeVar.getMonth() + 1,
+            year: dateTimeVar.getFullYear(),
+            hours: dateTimeVar.getHours(),
+            minutes: dateTimeVar.getMinutes(),
+            seconds: dateTimeVar.getSeconds()
+        }
+
+        let timeKeys = Object.keys(timeDict);
+        for (var i = 0; i < timeKeys.length; i++) {
+            let timeValue = timeDict[timeKeys[i]];
+            timeDict[timeKeys[i]] = timeValue < 10 ? '0' + timeValue : timeValue;
+        }
+        return `${timeDict.date}/${timeDict.month}/${timeDict.year} ${timeDict.hours}:${timeDict.minutes}:${timeDict.hours}`;
+    }
+
     render() {
         const { classes } = this.props;
         return (
@@ -122,7 +143,7 @@ class Home extends Component {
 
                                         // card header - username and date time
                                         title={post.user.username}
-                                        subheader={post.created_time}
+                                        subheader={this.convertTimeFormat(post.created_time)}
                                     />
                                     <CardContent>
                                     </CardContent>
