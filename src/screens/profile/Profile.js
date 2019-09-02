@@ -124,8 +124,8 @@ class Profile extends Component {
 
                     
 
-                    <img className="profile-pic flex-item" src={userData.profile_picture} alt="profile pic" />
-                    <div className="flex-container-column-1">
+                    <img className="profile-pic flex-item" src={userData.profile_picture} alt="profile picture" />
+                    <div className="flex-container-column-one">
 
                         
                         <Typography variant="h5" className="flex-item" style={{ display: "flex" }}>
@@ -133,7 +133,7 @@ class Profile extends Component {
                         </Typography>
 
                         
-                        <div className="flex-container-1">
+                        <div className="flex-container-one">
                             <p className="flex-1">Posts: {userData.counts.media}</p>
                             <p className="flex-1">Follows: {userData.counts.follows}</p>
                             <p className="flex-2">Followed By: {userData.counts.followed_by}</p>
