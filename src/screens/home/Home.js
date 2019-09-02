@@ -152,6 +152,24 @@ class Home extends Component {
         return `${timeDict.date}/${timeDict.month}/${timeDict.year} ${timeDict.hours}:${timeDict.minutes}:${timeDict.hours}`;
     }
 
+    // Redirect to profile page
+    myAccountHandler = () => {
+        this.props.history.push('/profile');
+    }
+
+    // Redirect to login page when logged out after clearing session memory
+    logoutHandler = () => {
+        sessionStorage.clear();
+        this.props.history.push("/");
+    }
+
+    searchHandler = (event) => {
+        let resultPosts = this.state.userPosts.filter(function (post) {
+            return post.caption.text.split('\n')[0].toLowerCase().includes(event.target.value.toLowerCase());
+        });
+        this.setState({ filteredUserPosts: resultPosts });
+    }
+
     toggleLikeCount(postId, likeState) {
         let newUserPosts = Object.assign({}, this.state.userPosts);
         let count = null;
@@ -221,6 +239,9 @@ class Home extends Component {
                     showSearchBox={true}
                     showProfilePicture={true}
                     showMyAccountMenu={true}
+                    myAccountHandler={this.myAccountHandler}
+                    logoutHandler={this.logoutHandler}
+                    searchHandler={this.searchHandler}
                     profilePictureUrl={this.state.userInfo.profile_picture}
                 />
 
