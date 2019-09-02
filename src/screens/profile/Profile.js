@@ -1,186 +1,352 @@
 import React, { Component } from 'react';
 import './Profile.css';
-import { withStyles } from '@material-ui/core/styles';
 import Header from '../../common/header/Header';
-import TextField from '@material-ui/core/TextField';
+import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
-import ModalBox from '../../common/modal/Modal';
-import Fab from '@material-ui/core/Fab';
-import EditIcon from '@material-ui/icons/Edit';
+import Icon from '@material-ui/core/Icon';
+import Modal from '@material-ui/core/Modal';
 import Typography from '@material-ui/core/Typography';
 import FormControl from '@material-ui/core/FormControl';
+import InputLabel from '@material-ui/core/InputLabel';
+import Input from '@material-ui/core/Input';
 import FormHelperText from '@material-ui/core/FormHelperText';
+import CardMedia from '@material-ui/core/CardMedia';
+import GridList from '@material-ui/core/GridList';
+import Fab from '@material-ui/core/Fab';
+import EditIcon from '@material-ui/icons/Edit';
+import GridListTile from '@material-ui/core/GridListTile';
+import IconButton from '@material-ui/core/IconButton';
+import FavoriteIconBorder from '@material-ui/icons/FavoriteBorder';
+import FavoriteIconFill from '@material-ui/icons/Favorite';
 
+const profileStyles = {
+    paper: {
+        position: 'relative',
+        width: "180px",
+        backgroundColor: "#fff",
+        top: "30%",
+        margin: "0 auto",
+        boxShadow: "2px 2px #888888",
+        padding: "20px"
+    },
+    media: {
+        height: '200px',
+        paddingTop: '56.25%', // 16:9
+    },
+    imageModal: {
+        backgroundColor: "#fff",
+        margin: "0 auto",
+        boxShadow: "2px 2px #888888",
+        padding: "10px",
+    }
+};
 
-const styles = theme => ({
-    fullnameEditHeading: {
-        marginBottom: 30,
-    },
-    fullnameEditField: {
-        width: "100%",
-    },
-    tags: {
-        color: "#82C0FF",
-    },
-    favoriteIconGridItem: {
-        marginTop: 5,
-    },
-    likesCount: {
-        marginTop: '10%',
-        fontWeight: 'bold',
-        marginLeft: 5,
-    },
-});
+const constants = {
+    userInfoUrl: "https://api.instagram.com/v1/users/self",
+    userMediaUrl: "https://api.instagram.com/v1/users/self/media/recent"
+};
 
 class Profile extends Component {
 
     constructor(props) {
-        super(props)
+        super(props);
+        if (sessionStorage.getItem('access-token') == null) {
+            props.history.replace('/');
+        }
         this.state = {
-            USER_DATA: null,
-            USER_MEDIA: null,
-            openModal: false,
-            openDetailModal: false,
-            selectedImage: null,
-            comment: '',
-            full_name: '',
-            invalidFullName: false,
-            userComments: {},
-            likesState: {},
+            profile_picture: null,
+            username: null,
+            full_name: null,
+            posts: null,
+            follows: null,
+            followed_by: null,
+            editOpen: false,
+            fullNameRequired: 'dispNone',
+            newFullName: '',
+            mediaData: null,
+            imageModalOpen: false,
+            currentItem: null,
+            likeSet: new Set(),
+            comments: {},
         }
-    }
-
-    getOwnerInfo = () => {
-        let data = null;
-        let url = `${this.props.userInfoUrl}${this.props.accessToken}`;
-        let xhr = new XMLHttpRequest();
-        let self = this;
-        xhr.onreadystatechange = function () {
-            if (this.readyState === 4 && this.status === 200) {
-                let OWNER_INFO_DATA = JSON.parse(this.responseText)
-                self.setState({ USER_DATA: OWNER_INFO_DATA.data, full_name: OWNER_INFO_DATA.data.full_name })
-            }
-        }
-        xhr.open("GET", url);
-        xhr.send(data);
     }
 
     componentDidMount() {
-        this.getOwnerInfo();
+        this.getUserInfo();
+        this.getMediaData();
     }
 
-
-    gridCallbackHandler = (data) => {
-        this.setState({ openModal: true, selectedImage: data });
+    getUserInfo = () => {
+        let that = this;
+        let myUrl = `${constants.userInfoUrl}/?access_token=${sessionStorage.getItem('access-token')}`;
+        return fetch(myUrl, {
+            method: 'GET',
+        }).then((response) => {
+            return response.json();
+        }).then((jsonResponse) => {
+            that.setState({
+                profile_picture: jsonResponse.data.profile_picture,
+                username: jsonResponse.data.username,
+                full_name: jsonResponse.data.full_name,
+                posts: jsonResponse.data.counts.media,
+                follows: jsonResponse.data.counts.follows,
+                followed_by: jsonResponse.data.counts.followed_by
+            });
+        }).catch((error) => {
+            console.log('error user data', error);
+        });
     }
 
-    editFullName = () => {
-        this.setState({ openDetailModal: true });
+    getMediaData = () => {
+        let that = this;
+        let myUrl = `${constants.userMediaUrl}/?access_token=${sessionStorage.getItem('access-token')}`;
+        return fetch(myUrl, {
+            method: 'GET',
+        }).then((response) => {
+            return response.json();
+        }).then((jsonResponse) => {
+            that.setState({
+                mediaData: jsonResponse.data
+            });
+        }).catch((error) => {
+            console.log('error media data', error);
+        });
     }
 
-    closeImageModalHandler = () => {
-        this.setState({ openModal: false, openDetailModal: false, invalidFullName: false });
+    handleOpenEditModal = () => {
+        this.setState({ editOpen: true });
     }
 
-    updateFullName = (event) => {
-        if (this.state.full_name) {
-            event.preventDefault();
-            let userdataWithUpdatedName = { ...this.state.USER_DATA, 'full_name': this.state.full_name };
-            this.setState({ USER_DATA: userdataWithUpdatedName, invalidFullName: false });
-            this.closeImageModalHandler();
+    handleCloseEditModal = () => {
+        this.setState({ editOpen: false });
+    }
+
+    handleOpenImageModal = (event) => {
+        var result = this.state.mediaData.find(item => {
+            return item.id === event.target.id
+        })
+        this.setState({ imageModalOpen: true, currentItem: result });
+    }
+
+    handleCloseImageModal = () => {
+        this.setState({ imageModalOpen: false });
+    }
+
+    inputFullNameChangeHandler = (e) => {
+        this.setState({
+            newFullName: e.target.value
+        })
+    }
+
+    updateClickHandler = () => {
+        if (this.state.newFullName === '') {
+            this.setState({ fullNameRequired: 'dispBlock' })
         } else {
-            this.setState({ invalidFullName: true, full_name: this.state.USER_DATA.full_name });
+            this.setState({ fullNameRequired: 'dispNone' })
+        }
+
+        if (this.state.newFullName === "") { return }
+
+        this.setState({
+            full_name: this.state.newFullName
+        })
+
+        this.handleCloseEditModal()
+    }
+
+    likeClickHandler = (id) => {
+        var foundItem = this.state.currentItem;
+        if (typeof foundItem !== undefined) {
+            if (!this.state.likeSet.has(id)) {
+                foundItem.likes.count++;
+                this.setState(({ likeSet }) => ({
+                    likeSet: new Set(likeSet.add(id))
+                }))
+            } else {
+                foundItem.likes.count--;
+                this.setState(({ likeSet }) => {
+                    const newLike = new Set(likeSet);
+                    newLike.delete(id);
+                    return {
+                        likeSet: newLike
+                    };
+                });
+            }
         }
     }
 
-    handleInputChange = inputType => event => {
-        this.setState({ [inputType]: event.target.value });
-    };
+    onAddCommentClicked = (id) => {
+        if (this.state.currentComment === "" || typeof this.state.currentComment === undefined) {
+            return;
+        }
 
-    logoutHandler = () => {
-        
+        let commentList = this.state.comments.hasOwnProperty(id) ?
+            this.state.comments[id].concat(this.state.currentComment) : [].concat(this.state.currentComment);
+
+        this.setState({
+            comments: {
+                ...this.state.comments,
+                [id]: commentList
+            },
+            currentComment: ''
+        })
+    }
+
+    commentChangeHandler = (e) => {
+        this.setState({
+            currentComment: e.target.value
+        });
+    }
+
+    logout = () => {
         sessionStorage.clear();
-        this.props.history.push("/");
+        this.props.history.replace('/');
     }
 
     render() {
-        const userData = this.state.USER_DATA;
-        const { openModal, selectedImage, openDetailModal } = this.state;
-        const { classes } = this.props;
-
+        let hashTags = []
+        if (this.state.currentItem !== null) {
+            hashTags = this.state.currentItem.tags.map(hash => {
+                return "#" + hash;
+            });
+        }
         return (
-            <div className='top-div'>
+            <div>
+                <Header
+                    screen={"Profile"}
+                    userProfileUrl={this.state.profile_picture}
+                    handleLogout={this.logout} />
+                <div className="user-info-section">
+                    <Avatar
+                        alt="User Image"
+                        src={this.state.profile_picture}
+                        style={{ width: "50px", height: "50px" }}
+                    />
+                    <span style={{ marginLeft: "20px" }}>
+						<div style={{ width: "600px", fontSize: "big" }}> {this.state.username} <br />
+							<div style={{ float: "left", width: "200px", fontSize: "small" }}> Posts: {this.state.posts} </div>
+							<div style={{ float: "left", width: "200px", fontSize: "small" }}> Follows: {this.state.follows} </div>
+							<div style={{ float: "left", width: "200px", fontSize: "small" }}> Followed By: {this.state.followed_by}</div> <br />
+						</div>
+						<div>{this.state.full_name}&nbsp;&nbsp;
+                            <Fab size="small" color="secondary" aria-label="edit" >
+								<EditIcon onClick={this.handleOpenEditModal} />
+							</Fab>
+						</div>
+						<Modal
+                            aria-labelledby="edit-modal"
+                            aria-describedby="modal to edit user full name"
+                            open={this.state.editOpen}
+                            onClose={this.handleCloseEditModal}
+                            style={{ alignItems: 'center', justifyContent: 'center' }}
+                        >
+							<div style={profileStyles.paper}>
+								<Typography variant="h5" id="modal-title">
+									Edit
+                                </Typography><br />
+								<FormControl required>
+									<InputLabel htmlFor="fullname">Full Name</InputLabel>
+									<Input id="fullname" onChange={this.inputFullNameChangeHandler} />
+									<FormHelperText className={this.state.fullNameRequired}><span className="red">required</span></FormHelperText>
+								</FormControl><br /><br /><br />
+								<Button variant="contained" color="primary" onClick={this.updateClickHandler}>
+									UPDATE
+                                </Button>
+							</div>
+						</Modal>
+					</span>
+                </div>
 
-                
-                {userData && <Header
-                    showProfilePicture={true}
-                    redirectToHome={true}
-                    logoutHandler={this.logoutHandler}
-                    profilePictureUrl={userData.profile_picture}
-                />}
+                {this.state.mediaData != null &&
+                <GridList cellHeight={'auto'} cols={3} style={{ padding: "40px" }}>
+                    {this.state.mediaData.map(item => (
+                        <GridListTile key={item.id}>
+                            <CardMedia
+                                id={item.id}
+                                style={profileStyles.media}
+                                image={item.images.standard_resolution.url}
+                                title={item.caption.text}
+                                onClick={this.handleOpenImageModal}
+                            />
+                        </GridListTile>
+                    ))}
+                </GridList>}
 
-                
-                {userData && <div className="container flex-container usredit">
-
-                    
-
-                    <img className="profile-pic flex-item" src={userData.profile_picture} alt="profile picture" />
-                    <div className="flex-container-column-one">
-
-                        
-                        <Typography variant="h5" className="flex-item" style={{ display: "flex" }}>
-                            {userData.username}
-                        </Typography>
-
-                        
-                        <div className="flex-container-one">
-                            <p className="flex-1">Posts: {userData.counts.media}</p>
-                            <p className="flex-1">Follows: {userData.counts.follows}</p>
-                            <p className="flex-2">Followed By: {userData.counts.followed_by}</p>
+                {this.state.currentItem != null &&
+                <Modal
+                    aria-labelledby="image-modal"
+                    aria-describedby="modal to show image details"
+                    open={this.state.imageModalOpen}
+                    onClose={this.handleCloseImageModal}
+                    style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', backgroundColor: "#fff", width: '70%', height: '70%' }}>
+                        <div style={{ width: '50%', padding: 10 }}>
+                            <img style={{ height: '100%', width: '100%' }}
+                                 src={this.state.currentItem.images.standard_resolution.url}
+                                 alt={this.state.currentItem.caption.text} />
                         </div>
 
-                        <div className="flex-container">
-
-                            
-                            <Typography variant='h6' className="flex-item" style={{ display: "flex", marginTop: 15 }}>
-                                {userData.full_name}
-                            </Typography>
-
-                            
-                            <Fab color='secondary' className={'editBtn'} onClick={this.editFullName}>
-                                <EditIcon />
-                            </Fab>
-
-                            
-                            <ModalBox openModal={openDetailModal} closeModal={this.closeImageModalHandler} widthClass={'userDetailModalClass'}>
-                                <div className="flex-container-column justify-content-end">
-                                    <FormControl className="flex-container">
-                                        <Typography className={classes.fullnameEditHeading} variant='h5'>Edit</Typography>
-                                        <TextField
-                                            className={classes.fullnameEditField}
-                                            id="fullName"
-                                            label="Full Name *"
-                                            placeholder="Full Name *"
-                                            margin="normal"
-                                            onChange={this.handleInputChange('full_name')}
-                                            value={this.state.full_name}
-                                        />
-                                        {this.state.invalidFullName ? <FormHelperText style={{ color: 'red' }}>required</FormHelperText> : ''}
-                                    </FormControl>
+                        <div style={{ display: 'flex', flexDirection: 'column', width: '50%', padding: 10 }}>
+                            <div style={{ borderBottom: '2px solid #f2f2f2', display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }}>
+                                <Avatar
+                                    alt="User Image"
+                                    src={this.state.profile_picture}
+                                    style={{ width: "50px", height: "50px", margin: '10px' }} />
+                                <Typography component="p">
+                                    {this.state.username}
+                                </Typography>
+                            </div>
+                            <div style={{ display: 'flex', height: '100%', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                <div>
+                                    <Typography component="p">
+                                        {(this.state.currentItem.caption.text !== null) && (this.state.currentItem.caption.text).substring(0, this.state.currentItem.caption.text.indexOf('#'))}
+                                    </Typography>
+                                    <Typography style={{ color: '#4dabf5' }} component="p" >
+                                        {hashTags.join(' ')}
+                                    </Typography>
+                                    {this.state.comments.hasOwnProperty(this.state.currentItem.id) && this.state.comments[this.state.currentItem.id].map((comment, index) => {
+                                        return (
+                                            <div key={index} className="rowStyle">
+                                                <Typography component="p" style={{ fontWeight: 'bold' }}>
+                                                    <span>{this.state.username}:&nbsp;</span>
+                                                </Typography>
+                                                <Typography component="p" >
+                                                    {comment}
+                                                </Typography>
+                                            </div>
+                                        )
+                                    })}
                                 </div>
-                                <Button type="submit" variant="contained" className={"addBtn"} color="primary" onClick={this.updateFullName}>UPDATE</Button>
-                            </ModalBox>
+                                <div>
+                                    <div className="rowStyle">
+                                        <IconButton aria-label="Add to favorites" onClick={this.likeClickHandler.bind(this, this.state.currentItem.id)}>
+                                            {this.state.likeSet.has(this.state.currentItem.id) && <FavoriteIconFill style={{ color: '#F44336' }} />}
+                                            {!this.state.likeSet.has(this.state.currentItem.id) && <FavoriteIconBorder />}
+                                        </IconButton>
+                                        <Typography component="p">
+                                            {this.state.currentItem.likes.count} Likes
+                                        </Typography>
+                                    </div>
+                                    <div className="rowStyle">
+                                        <FormControl style={{ flexGrow: 1 }}>
+                                            <InputLabel htmlFor="comment">Add Comment</InputLabel>
+                                            <Input id="comment" value={this.state.currentComment} onChange={this.commentChangeHandler} />
+                                        </FormControl>
+                                        <FormControl>
+                                            <Button onClick={this.onAddCommentClicked.bind(this, this.state.currentItem.id)}
+                                                    variant="contained" color="primary">
+                                                ADD
+                                            </Button>
+                                        </FormControl>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>}
-
-                         
-
-                
-                
+                </Modal>}
             </div>
         )
     }
 }
 
-export default withStyles(styles)(Profile);
+export default Profile;

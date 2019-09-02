@@ -64,7 +64,7 @@ class Login extends Component {
         if (this.state.loginUsername && this.state.loginPassword) {
             // use mock username and password for log in
             let username = 'Aman';
-            let password = 'Password1234';
+            let password = 'Aman';
             let accessToken = '8661035776.d0fcd39.39f63ab2f88d4f9c92b0862729ee2784';
             if (username === this.state.loginUsername && password === this.state.loginPassword) {
                 sessionStorage.setItem('access-token', accessToken);
@@ -81,7 +81,7 @@ class Login extends Component {
             <div>
 
                 {/*Rendering Header*/}
-                <Header />
+                <Header screen={"Login"} />
 
                 {/* login card */}
                 <Card className={classes.card}>

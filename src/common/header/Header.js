@@ -1,124 +1,171 @@
-import React, { Component } from 'react';
-import './Header.css';
-import SearchIcon from '@material-ui/icons/Search';
-import Input from '@material-ui/core/Input';
-import IconButton from '@material-ui/core/IconButton';
-import Avatar from '@material-ui/core/Avatar';
-import Popper from '@material-ui/core/Popper';
-import Grow from '@material-ui/core/Grow';
-import Paper from '@material-ui/core/Paper';
-import ClickAwayListener from '@material-ui/core/ClickAwayListener';
-import MenuList from '@material-ui/core/MenuList';
-import MenuItem from '@material-ui/core/MenuItem';
-import Divider from '@material-ui/core/Divider';
-import { Link } from 'react-router-dom';
+import React, { Component } from "react";
+import "./Header.css";
+import AppBar from "@material-ui/core/AppBar";
+import Toolbar from "@material-ui/core/Toolbar";
+import InputBase from "@material-ui/core/InputBase";
+import { withStyles } from "@material-ui/core/styles";
+import SearchIcon from "@material-ui/icons/Search";
+import Avatar from "@material-ui/core/Avatar";
+import IconButton from "@material-ui/core/IconButton";
+import MenuItem from "@material-ui/core/MenuItem";
+import Popover from "@material-ui/core/Popover";
+import { Link } from "react-router-dom";
+
+const headerStyles = theme => ({
+    grow: {
+        flexGrow: 1
+    },
+    search: {
+        position: "relative",
+        borderRadius: "4px",
+        backgroundColor: "#c0c0c0",
+        marginLeft: 0,
+        width: "300px"
+    },
+    searchIcon: {
+        width: theme.spacing(4),
+        height: "100%",
+        position: "absolute",
+        pointerEvents: "none",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#000000"
+    },
+    inputInput: {
+        paddingTop: theme.spacing(1),
+        paddingRight: theme.spacing(1),
+        paddingBottom: theme.spacing(1),
+        paddingLeft: theme.spacing(4),
+        transition: theme.transitions.create("width"),
+        width: "100%",
+        [theme.breakpoints.up("sm")]: {
+            width: 120,
+            "&:focus": {
+                width: 200
+            }
+        }
+    },
+    avatar: {
+        width: 50,
+        height: 50
+    },
+    appHeader: {
+        backgroundColor: "#263238"
+    },
+    hr: {
+        height: "1.5px",
+        backgroundColor: "#f2f2f2",
+        marginLeft: "5px",
+        marginRight: "5px"
+    }
+});
 
 class Header extends Component {
-
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
         this.state = {
-            open: false,
-        }
-    }
-
-    handleToggle = () => {
-        this.setState(state => ({open: !state.open}));
-    };
-
-    handleClose = event => {
-        if (this.anchorEl.contains(event.target)) {
-            return;
-        }
-
-        this.setState({open: false});
-    };
-
-    myAccountHandler = (e) => {
-
-        this.handleClose(e);
-
-        // Take to the profile page
-        this.props.myAccountHandler();
-    }
-
-    logoutHandler = (e) => {
-
-        this.handleClose(e);
-
-        //Redirect to login page and clear session data
-        this.props.logoutHandler();
+            anchorEl: null
+        };
     }
 
     render() {
-        const {open} = this.state;
+        const { classes, screen } = this.props;
         return (
-            <div>
-                <header className='class-header'>
-
-                    {/* Whn logged in clicking the Image Viewer logo to take to homepage */}
-                    {this.props.redirectToHome ?
-                        <Link to='/home'>
-                            <span className='class-logo'>Image Viewer</span>
-                        </Link>
-                        :
-                        <span className='class-logo'>Image Viewer</span>
-                    }
-
-                    {/* page components to be loaded based on whether the profile picture should be displayed if login is success otherwise nothing to show */}
-                    {this.props.showProfilePicture ?
-                        <div id='profile-pic-icon'>
-                            <IconButton
-                                buttonRef={node => {
-                                    this.anchorEl = node;
-                                }}
-                                aria-owns={open ? 'menu-list-grow' : undefined}
-                                aria-haspopup='true'
-                                onClick={this.handleToggle}
+            <div className="parent-div">
+                <AppBar className={classes.appHeader}>
+                    <Toolbar>
+                        {(screen === "Login" || screen === "Home") && (
+                            <span className="logo-on-header">Image Viewer</span>
+                        )}
+                        {screen === "Profile" && (
+                            <Link
+                                style={{ textDecoration: "none", color: "white" }}
+                                to="/home"
                             >
-                                <Avatar id='profile-pic-avatar' alt='Profile picture' src={this.props.profilePictureUrl} />
-                            </IconButton>
-                            <Popper open={open} anchorEl={this.anchorEl} transition disablePortal>
-                                {({TransitionProps, placement}) => (
-                                    <Grow
-                                        {...TransitionProps}
-                                        id='menu-list-grow'
-                                        style={{transferOrigin: placement === 'bottom' ? 'center top' : 'center bottom'}}
-                                    >
-                                        <Paper>
-                                            <ClickAwayListener onClickAway={this.handleClose}>
-                                                <MenuList id='menu-list'>
-                                                    {this.props.showMyAccountMenu ?
-                                                        <div>
-                                                            <MenuItem onClick={this.myAccountHandler}>My Account</MenuItem>
-                                                            <Divider />
-                                                        </div>
-                                                        : ''
-                                                    }
-                                                    <MenuItem onClick={this.logoutHandler}>Logout</MenuItem>
-                                                </MenuList>
-                                            </ClickAwayListener>
-                                        </Paper>
-                                    </Grow>
-                                )}
-                            </Popper>
-                        </div>
-                        : ''
-                    }
-
-                    {/* page components to be loaded based on whether the search box should be displayed if login is success otherwise nothing to show*/}
-                    {this.props.showSearchBox ?
-                        <div className='searchbox'>
-                            <SearchIcon id='searchbox-icon' />
-                            <Input id='searchbox-input' type='text' placeholder='Search...' disableUnderline={true} onChange={this.props.searchHandler} />
-                        </div>
-                        : ''
-                    }
-
-                </header>
+                                <span className="logo-on-header">Image Viewer</span>
+                            </Link>
+                        )}
+                        <div className={classes.grow} />
+                        {screen === "Home" && (
+                            <div className={classes.search}>
+                                <div className={classes.searchIcon}>
+                                    <SearchIcon />
+                                </div>
+                                <InputBase
+                                    onChange={e => {
+                                        this.props.searchHandler(e.target.value);
+                                    }}
+                                    placeholder="Search…"
+                                    classes={{
+                                        input: classes.inputInput
+                                    }}
+                                />
+                            </div>
+                        )}
+                        {(screen === "Home" || screen === "Profile") && (
+                            <div>
+                                <IconButton onClick={this.handleClick}>
+                                    <Avatar
+                                        alt="Profile Pic"
+                                        src={this.props.userProfileUrl}
+                                        className={classes.avatar}
+                                        style={{ border: "1px solid #fff" }}
+                                    />
+                                </IconButton>
+                                <Popover
+                                    id="simple-menu"
+                                    anchorEl={this.state.anchorEl}
+                                    open={Boolean(this.state.anchorEl)}
+                                    onClose={this.handleClose}
+                                    anchorOrigin={{
+                                        vertical: "bottom",
+                                        horizontal: "left"
+                                    }}
+                                    transformOrigin={{
+                                        vertical: "top",
+                                        horizontal: "left"
+                                    }}
+                                >
+                                    <div style={{ padding: "5px" }}>
+                                        {screen === "Home" && (
+                                            <div>
+                                                <MenuItem onClick={this.handleAccount}>
+                                                    My Account
+                                                </MenuItem>
+                                                <div className={classes.hr} />
+                                            </div>
+                                        )}
+                                        <MenuItem onClick={this.handleLogout}>Logout</MenuItem>
+                                    </div>
+                                </Popover>
+                            </div>
+                        )}
+                    </Toolbar>
+                </AppBar>
             </div>
-        )
+        );
     }
+
+    handleClick = event => {
+        this.setState({
+            anchorEl: event.currentTarget
+        });
+    };
+
+    handleAccount = () => {
+        this.props.handleAccount();
+        this.handleClose();
+    };
+
+    handleLogout = () => {
+        this.props.handleLogout();
+        this.handleClose();
+    };
+
+    handleClose = () => {
+        this.setState({ anchorEl: null });
+    };
 }
 
-export default Header;
+export default withStyles(headerStyles)(Header);
