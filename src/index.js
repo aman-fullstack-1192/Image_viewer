@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import Controller from '../src/screens/Controller';
 import './index.css';
-import Header from '../src/common/header/Header'
 
 ReactDOM.render(
-    <Header/>,
+    <Controller/>,
     document.getElementById('root')
 );
